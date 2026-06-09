@@ -72,6 +72,9 @@ class WhisperModel(SamplesMixin, Model):
     ):
         SamplesMixin.__init__(self)
 
+        # fom.Model convention: the framework probes model.config
+        self.config = None
+
         from transformers import pipeline
 
         self.device = device or get_device()
