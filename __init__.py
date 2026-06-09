@@ -37,3 +37,64 @@ def load_model(model_name=None, model_path=None, **kwargs):
     """
     kwargs.setdefault("model_size", _model_size_from_name(model_name))
     return WhisperXModel(**kwargs)
+
+
+def resolve_input(model_name, ctx):
+    """Defines the App "Apply Model" operator form for WhisperX.
+
+    Model size is chosen by which ``base_name`` the user selects (``-large-v3``
+    / ``-turbo`` / ``-large-v2``), so it is intentionally not a form field. We
+    only collect the per-run options here.
+    """
+    from fiftyone.operators import types
+
+    inputs = types.Object()
+
+    inputs.view(
+        "metadata_notice",
+        types.Notice(
+            label=(
+                "Run dataset.compute_metadata() before applying this model so "
+                "segment timestamps can be mapped to frame supports."
+            )
+        ),
+    )
+    inputs.bool(
+        "diarize",
+        default=False,
+        label="Diarize (speaker labels)",
+        description=(
+            "Assign a speaker to each segment. Requires the HF_TOKEN "
+            "environment variable and acceptance of the pyannote model license."
+        ),
+        view=types.CheckboxView(),
+    )
+    inputs.int(
+        "batch_size",
+        default=16,
+        label="Batch size",
+        description="Transcription batch size.",
+    )
+    inputs.str(
+        "language",
+        default=None,
+        required=False,
+        label="Language",
+        description=(
+            "Force a language code (e.g. 'en'). Leave empty to auto-detect "
+            "the language of each sample."
+        ),
+    )
+
+    return types.Property(inputs)
+
+
+def parse_parameters(model_name, ctx, params):
+    """Formats the App operator inputs before they reach :func:`load_model`.
+
+    An empty ``language`` field means "auto-detect", which WhisperX expresses
+    as ``None`` rather than an empty string.
+    """
+    language = params.get("language")
+    if isinstance(language, str) and not language.strip():
+        params["language"] = None
