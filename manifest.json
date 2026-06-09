@@ -3,43 +3,43 @@
     "url": "https://github.com/harpreetsahota204/whisperx",
     "models": [
         {
-            "base_name": "whisperx-large-v3",
-            "base_filename": "whisperx-large-v3",
-            "author": "Max Bain",
-            "license": "BSD-4-Clause (WhisperX)",
-            "source": "https://github.com/m-bain/whisperX",
-            "description": "WhisperX large-v3 speech-to-text. Produces timestamped, optionally speaker-labeled transcript segments as TemporalDetections on video samples.",
-            "tags": ["audio", "asr", "transcription", "speech-to-text", "video", "whisperx"],
+            "base_name": "whisper-large-v3",
+            "base_filename": "whisper-large-v3",
+            "author": "OpenAI",
+            "license": "Apache-2.0",
+            "source": "https://huggingface.co/openai/whisper-large-v3",
+            "description": "Whisper large-v3 speech-to-text via the Transformers ASR pipeline. Produces segment-level timestamped transcript segments as TemporalDetections plus a flat transcript string on video samples.",
+            "tags": ["audio", "asr", "transcription", "speech-to-text", "video", "whisper", "transformers"],
             "requirements": {
-                "packages": ["torch", "torchaudio", "whisperx"],
+                "packages": ["torch", "transformers>=4.56", "accelerate"],
                 "cpu": {"support": true},
                 "gpu": {"support": true}
             }
         },
         {
-            "base_name": "whisperx-large-v3-turbo",
-            "base_filename": "whisperx-large-v3-turbo",
-            "author": "Max Bain",
-            "license": "BSD-4-Clause (WhisperX)",
-            "source": "https://github.com/m-bain/whisperX",
-            "description": "WhisperX large-v3-turbo speech-to-text. Higher throughput at a small accuracy cost; English-strong. Returns timestamped, optionally speaker-labeled TemporalDetections on video samples.",
-            "tags": ["audio", "asr", "transcription", "speech-to-text", "video", "whisperx"],
+            "base_name": "whisper-large-v3-turbo",
+            "base_filename": "whisper-large-v3-turbo",
+            "author": "OpenAI",
+            "license": "MIT",
+            "source": "https://huggingface.co/openai/whisper-large-v3-turbo",
+            "description": "Whisper large-v3-turbo speech-to-text via the Transformers ASR pipeline. Higher throughput at a small accuracy cost. Returns segment-level TemporalDetections plus a flat transcript string on video samples.",
+            "tags": ["audio", "asr", "transcription", "speech-to-text", "video", "whisper", "transformers"],
             "requirements": {
-                "packages": ["torch", "torchaudio", "whisperx"],
+                "packages": ["torch", "transformers>=4.56", "accelerate"],
                 "cpu": {"support": true},
                 "gpu": {"support": true}
             }
         },
         {
-            "base_name": "whisperx-large-v2",
-            "base_filename": "whisperx-large-v2",
-            "author": "Max Bain",
-            "license": "BSD-4-Clause (WhisperX)",
-            "source": "https://github.com/m-bain/whisperX",
-            "description": "WhisperX large-v2 speech-to-text. Returns timestamped, optionally speaker-labeled TemporalDetections on video samples.",
-            "tags": ["audio", "asr", "transcription", "speech-to-text", "video", "whisperx"],
+            "base_name": "whisper-large-v2",
+            "base_filename": "whisper-large-v2",
+            "author": "OpenAI",
+            "license": "Apache-2.0",
+            "source": "https://huggingface.co/openai/whisper-large-v2",
+            "description": "Whisper large-v2 speech-to-text via the Transformers ASR pipeline. Returns segment-level TemporalDetections plus a flat transcript string on video samples.",
+            "tags": ["audio", "asr", "transcription", "speech-to-text", "video", "whisper", "transformers"],
             "requirements": {
-                "packages": ["torch", "torchaudio", "whisperx"],
+                "packages": ["torch", "transformers>=4.56", "accelerate"],
                 "cpu": {"support": true},
                 "gpu": {"support": true}
             }

@@ -1,26 +1,27 @@
 """
-FiftyOne remote zoo source entry points for WhisperX.
+FiftyOne remote zoo source entry points for Whisper (Transformers).
 
 Exposes ``download_model`` and ``load_model`` as required by FiftyOne's zoo
 machinery. See ``zoo.py`` for the model implementation.
 """
 
-from .zoo import WhisperXModel
+from .zoo import WhisperModel
 
 
-def _model_size_from_name(model_name):
-    """Maps a manifest ``base_name`` to a WhisperX model size.
+def _model_id_from_name(model_name):
+    """Maps a manifest ``base_name`` to a Hugging Face model id.
 
-    ``"whisperx-large-v3"`` -> ``"large-v3"``. Falls back to ``"large-v3"`` if
-    the name does not carry the ``whisperx-`` prefix.
+    ``"whisper-large-v3"`` -> ``"openai/whisper-large-v3"``. Falls back to
+    ``"openai/whisper-large-v3"`` if the name is missing or unrecognized.
     """
-    if model_name and model_name.startswith("whisperx-"):
-        return model_name[len("whisperx-"):]
-    return "large-v3"
+    if model_name and model_name.startswith("whisper"):
+        return "openai/" + model_name
+    return "openai/whisper-large-v3"
 
 
 def download_model(model_name, model_path):
-    """No-op: WhisperX pulls its own weights from Hugging Face on first load.
+    """No-op: Transformers pulls weights from the Hugging Face cache on first
+    load.
 
     Idempotent by construction — there is nothing to fetch or verify here, so
     it is always safe to call.
@@ -28,23 +29,22 @@ def download_model(model_name, model_path):
 
 
 def load_model(model_name=None, model_path=None, **kwargs):
-    """Loads a :class:`WhisperXModel`.
+    """Loads a :class:`WhisperModel`.
 
-    The model size is derived from ``model_name`` (the manifest ``base_name``)
-    unless an explicit ``model_size`` is passed via ``kwargs``. All other
-    ``kwargs`` (``compute_type``, ``device``, ``batch_size``, ``diarize``,
+    The HF model id is derived from ``model_name`` (the manifest ``base_name``)
+    unless an explicit ``model_id`` is passed via ``kwargs``. All other
+    ``kwargs`` (``device``, ``torch_dtype``, ``batch_size``, ``chunk_length_s``,
     ``language``) flow straight through from ``load_zoo_model``.
     """
-    kwargs.setdefault("model_size", _model_size_from_name(model_name))
-    return WhisperXModel(**kwargs)
+    kwargs.setdefault("model_id", _model_id_from_name(model_name))
+    return WhisperModel(**kwargs)
 
 
 def resolve_input(model_name, ctx):
-    """Defines the App "Apply Model" operator form for WhisperX.
+    """Defines the App "Apply Model" operator form for Whisper.
 
-    Model size is chosen by which ``base_name`` the user selects (``-large-v3``
-    / ``-turbo`` / ``-large-v2``), so it is intentionally not a form field. We
-    only collect the per-run options here.
+    The model is chosen from the list (``whisper-large-v3`` / ``-turbo`` /
+    ``-large-v2``), so only the per-run options are collected here.
     """
     from fiftyone.operators import types
 
@@ -59,21 +59,11 @@ def resolve_input(model_name, ctx):
             )
         ),
     )
-    inputs.bool(
-        "diarize",
-        default=False,
-        label="Diarize (speaker labels)",
-        description=(
-            "Assign a speaker to each segment. Requires the HF_TOKEN "
-            "environment variable and acceptance of the pyannote model license."
-        ),
-        view=types.CheckboxView(),
-    )
     inputs.int(
         "batch_size",
         default=16,
         label="Batch size",
-        description="Transcription batch size.",
+        description="Number of audio chunks decoded per batch.",
     )
     inputs.str(
         "language",
@@ -92,8 +82,8 @@ def resolve_input(model_name, ctx):
 def parse_parameters(model_name, ctx, params):
     """Formats the App operator inputs before they reach :func:`load_model`.
 
-    An empty ``language`` field means "auto-detect", which WhisperX expresses
-    as ``None`` rather than an empty string.
+    An empty ``language`` field means "auto-detect", which Whisper expresses as
+    ``None`` rather than an empty string.
     """
     language = params.get("language")
     if isinstance(language, str) and not language.strip():
