@@ -1,0 +1,45 @@
+{
+    "name": "harpreetsahota204/whisperx",
+    "url": "https://github.com/harpreetsahota204/whisperx",
+    "models": [
+        {
+            "base_name": "whisperx-large-v3",
+            "author": "Max Bain",
+            "license": "BSD-4-Clause (WhisperX)",
+            "source": "https://github.com/m-bain/whisperX",
+            "description": "WhisperX large-v3 speech-to-text. Produces timestamped, optionally speaker-labeled transcript segments as TemporalDetections on video samples.",
+            "tags": ["audio", "asr", "transcription", "speech-to-text", "video", "whisperx"],
+            "requirements": {
+                "packages": ["torch", "torchaudio", "whisperx"],
+                "cpu": {"support": true},
+                "gpu": {"support": true}
+            }
+        },
+        {
+            "base_name": "whisperx-large-v3-turbo",
+            "author": "Max Bain",
+            "license": "BSD-4-Clause (WhisperX)",
+            "source": "https://github.com/m-bain/whisperX",
+            "description": "WhisperX large-v3-turbo speech-to-text. Higher throughput at a small accuracy cost; English-strong. Returns timestamped, optionally speaker-labeled TemporalDetections on video samples.",
+            "tags": ["audio", "asr", "transcription", "speech-to-text", "video", "whisperx"],
+            "requirements": {
+                "packages": ["torch", "torchaudio", "whisperx"],
+                "cpu": {"support": true},
+                "gpu": {"support": true}
+            }
+        },
+        {
+            "base_name": "whisperx-large-v2",
+            "author": "Max Bain",
+            "license": "BSD-4-Clause (WhisperX)",
+            "source": "https://github.com/m-bain/whisperX",
+            "description": "WhisperX large-v2 speech-to-text. Returns timestamped, optionally speaker-labeled TemporalDetections on video samples.",
+            "tags": ["audio", "asr", "transcription", "speech-to-text", "video", "whisperx"],
+            "requirements": {
+                "packages": ["torch", "torchaudio", "whisperx"],
+                "cpu": {"support": true},
+                "gpu": {"support": true}
+            }
+        }
+    ]
+}
