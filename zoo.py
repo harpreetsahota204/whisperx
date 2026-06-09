@@ -52,12 +52,12 @@ class WhisperModel(SamplesMixin, Model):
             auto-selects via :func:`get_device`
         torch_dtype: torch dtype for the model; ``None`` (default) picks
             ``float16`` on cuda/mps and ``float32`` on cpu
-        chunk_length_s: ``None`` (default) uses Whisper's native sequential
-            long-form decoding (more accurate). Set a value (e.g. 30) to use
-            the faster but less accurate chunked algorithm.
 
     Runtime parameters (per-call setters, no reload needed):
         batch_size: number of chunks decoded per batch
+        chunk_length_s: ``None`` (default) uses Whisper's native sequential
+            long-form decoding (more accurate); set a value (e.g. 30) to use
+            the faster but less accurate chunked algorithm
         language: force a language code (e.g. ``"en"``); ``None`` auto-detects
     """
 
@@ -97,11 +97,10 @@ class WhisperModel(SamplesMixin, Model):
 
     def __exit__(self, *args):
         # Free cached device memory once apply_model finishes with the model.
-        if torch.cuda.is_available():
+        if self.device == "cuda":
             torch.cuda.empty_cache()
-        elif hasattr(torch.backends, "mps") and torch.backends.mps.is_available():
+        elif self.device == "mps":
             torch.mps.empty_cache()
-        return False
 
     @property
     def media_type(self):
@@ -114,6 +113,14 @@ class WhisperModel(SamplesMixin, Model):
     @batch_size.setter
     def batch_size(self, value):
         self._batch_size = value
+
+    @property
+    def chunk_length_s(self):
+        return self._chunk_length_s
+
+    @chunk_length_s.setter
+    def chunk_length_s(self, value):
+        self._chunk_length_s = value
 
     @property
     def language(self):

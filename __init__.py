@@ -11,12 +11,15 @@ from .zoo import WhisperModel
 def _model_id_from_name(model_name):
     """Maps a manifest ``base_name`` to a Hugging Face model id.
 
-    ``"whisper-large-v3"`` -> ``"openai/whisper-large-v3"``. Falls back to
-    ``"openai/whisper-large-v3"`` if the name is missing or unrecognized.
+    ``"whisper-large-v3"`` -> ``"openai/whisper-large-v3"``.
     """
-    if model_name and model_name.startswith("whisper"):
-        return "openai/" + model_name
-    return "openai/whisper-large-v3"
+    if not model_name or not model_name.startswith("whisper"):
+        raise ValueError(
+            "Unrecognized model name '%s'; pass an explicit `model_id` "
+            "(e.g. 'openai/whisper-large-v3') instead" % model_name
+        )
+
+    return "openai/" + model_name
 
 
 def download_model(model_name, model_path):
@@ -36,7 +39,9 @@ def load_model(model_name=None, model_path=None, **kwargs):
     ``kwargs`` (``device``, ``torch_dtype``, ``batch_size``, ``chunk_length_s``,
     ``language``) flow straight through from ``load_zoo_model``.
     """
-    kwargs.setdefault("model_id", _model_id_from_name(model_name))
+    if "model_id" not in kwargs:
+        kwargs["model_id"] = _model_id_from_name(model_name)
+
     return WhisperModel(**kwargs)
 
 
