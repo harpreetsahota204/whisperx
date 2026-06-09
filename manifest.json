@@ -4,6 +4,7 @@
     "models": [
         {
             "base_name": "whisperx-large-v3",
+            "base_filename": "whisperx-large-v3",
             "author": "Max Bain",
             "license": "BSD-4-Clause (WhisperX)",
             "source": "https://github.com/m-bain/whisperX",
@@ -17,6 +18,7 @@
         },
         {
             "base_name": "whisperx-large-v3-turbo",
+            "base_filename": "whisperx-large-v3-turbo",
             "author": "Max Bain",
             "license": "BSD-4-Clause (WhisperX)",
             "source": "https://github.com/m-bain/whisperX",
@@ -30,6 +32,7 @@
         },
         {
             "base_name": "whisperx-large-v2",
+            "base_filename": "whisperx-large-v2",
             "author": "Max Bain",
             "license": "BSD-4-Clause (WhisperX)",
             "source": "https://github.com/m-bain/whisperX",
