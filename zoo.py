@@ -9,9 +9,13 @@ for x86 only, so it was CPU-bound on aarch64 GPUs like the GB10.
 Contract:
   - media_type = "video"  -> FiftyOne routes through ``_apply_video_model``
                              (a per-sample loop, NOT a DataLoader).
-  - SamplesMixin          -> predict() gets the sample so we can read
-                             ``sample.filepath``; the ASR pipeline demuxes audio
-                             from the media file with ffmpeg.
+  - SamplesMixin          -> predict() gets the sample so we can resolve its
+                             media path; the ASR pipeline demuxes audio from
+                             the media file with ffmpeg. ``sample.local_path``
+                             is preferred when present (FiftyOne Enterprise:
+                             downloads cloud-backed media to the local cache),
+                             falling back to ``sample.filepath`` (open source,
+                             where media is local).
   - predict() returns two sample-level outputs in one pass:
         "segments"   -> fo.TemporalDetections (segment-level timestamps, text)
         "transcript" -> flat transcript string
@@ -137,6 +141,12 @@ class WhisperModel(SamplesMixin, Model):
         # ``arg`` is the FFmpegVideoReader opened by apply_model; unused here.
         # The ASR pipeline reads the media file directly and demuxes its audio.
         generate_kwargs = {"task": "transcribe"}
+
+        # ``local_path`` exists in FiftyOne Enterprise, where it downloads
+        # cloud-backed media (e.g. gs:// / s3:// filepaths) to the local media
+        # cache if necessary; ffmpeg cannot read cloud URIs. Open source has
+        # no such property, and ``filepath`` is already local there.
+        filepath = getattr(sample, "local_path", sample.filepath)
         if self._language:
             generate_kwargs["language"] = self._language
 
@@ -150,7 +160,7 @@ class WhisperModel(SamplesMixin, Model):
         if self._chunk_length_s is not None:
             pipe_kwargs["chunk_length_s"] = self._chunk_length_s
 
-        result = self._pipe(sample.filepath, **pipe_kwargs)
+        result = self._pipe(filepath, **pipe_kwargs)
 
         detections = []
         for chunk in result.get("chunks", []):

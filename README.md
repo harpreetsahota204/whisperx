@@ -178,6 +178,16 @@ Using `label_field={"segments": "whisper_segments", "transcript": "whisper_trans
   additions.
 - Video models are applied via a per-sample loop, not a PyTorch DataLoader, so
   there is no `num_workers` consideration here.
+- **Cloud-backed datasets (FiftyOne Enterprise)** are supported: media paths
+  are resolved via `sample.local_path` when available, which downloads remote
+  media (e.g. `gs://` / `s3://` filepaths) to the local media cache as needed.
+  Open-source datasets use `sample.filepath` directly. For batch runs,
+  pre-cache the media up-front rather than one video at a time mid-loop:
+
+  ```python
+  dataset.download_media()  # idempotent; already-cached files are skipped
+  dataset.apply_model(model, ...)
+  ```
 - Videos with **no audio stream** make the pipeline's ffmpeg read fail for
   that sample. `apply_model` skips failed samples by default
   (`skip_failures=True`), logging a warning and leaving both fields unset;
