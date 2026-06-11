@@ -9,9 +9,13 @@ for x86 only, so it was CPU-bound on aarch64 GPUs like the GB10.
 Contract:
   - media_type = "video"  -> FiftyOne routes through ``_apply_video_model``
                              (a per-sample loop, NOT a DataLoader).
-  - SamplesMixin          -> predict() gets the sample so we can read
-                             ``sample.filepath``; the ASR pipeline demuxes audio
-                             from the media file with ffmpeg.
+  - SamplesMixin          -> predict() gets the sample so we can resolve its
+                             media path; the ASR pipeline demuxes audio from
+                             the media file with ffmpeg. ``sample.local_path``
+                             is preferred when present (FiftyOne Enterprise:
+                             downloads cloud-backed media to the local cache),
+                             falling back to ``sample.filepath`` (open source,
+                             where media is local).
   - predict() returns two sample-level outputs in one pass:
         "segments"   -> fo.TemporalDetections (segment-level timestamps, text)
         "transcript" -> flat transcript string
@@ -28,10 +32,46 @@ Precondition: run ``dataset.compute_metadata()`` before ``apply_model`` so that
 ``TemporalDetection.from_timestamps()`` can convert seconds -> frame support.
 """
 
+import subprocess
+
+import numpy as np
 import torch
 
 import fiftyone as fo
 from fiftyone.core.models import Model, SamplesMixin
+
+
+def load_audio(filepath, sampling_rate):
+    """Decodes a media file's audio track to mono float32 PCM with ffmpeg.
+
+    ffmpeg reads the file directly (seekable). Passing a filename to the ASR
+    pipeline instead would make transformers read the whole file into memory
+    and pipe the bytes through ffmpeg's stdin — a non-seekable stream, which
+    cannot demux MP4s whose moov atom trails the media data, yielding zero
+    audio and a misleading "soundfile is malformed" error.
+    """
+    cmd = [
+        "ffmpeg",
+        "-nostdin",
+        "-i", filepath,
+        "-vn",
+        "-ac", "1",
+        "-ar", str(sampling_rate),
+        "-f", "f32le",
+        "-",
+    ]
+    proc = subprocess.run(cmd, capture_output=True)
+    if proc.returncode != 0:
+        raise ValueError(
+            "ffmpeg failed to decode audio from '%s': %s"
+            % (filepath, proc.stderr.decode(errors="replace").strip()[-300:])
+        )
+
+    audio = np.frombuffer(proc.stdout, dtype=np.float32)
+    if audio.size == 0:
+        raise ValueError("No audio stream decoded from '%s'" % filepath)
+
+    return audio
 
 
 def get_device():
@@ -137,6 +177,15 @@ class WhisperModel(SamplesMixin, Model):
         # ``arg`` is the FFmpegVideoReader opened by apply_model; unused here.
         # The ASR pipeline reads the media file directly and demuxes its audio.
         generate_kwargs = {"task": "transcribe"}
+
+        # ``local_path`` exists in FiftyOne Enterprise, where it downloads
+        # cloud-backed media (e.g. gs:// / s3:// filepaths) to the local media
+        # cache if necessary; ffmpeg cannot read cloud URIs. Open source has
+        # no such property, and ``filepath`` is already local there.
+        filepath = getattr(sample, "local_path", sample.filepath)
+
+        sampling_rate = self._pipe.feature_extractor.sampling_rate
+        audio = load_audio(filepath, sampling_rate)
         if self._language:
             generate_kwargs["language"] = self._language
 
@@ -150,7 +199,9 @@ class WhisperModel(SamplesMixin, Model):
         if self._chunk_length_s is not None:
             pipe_kwargs["chunk_length_s"] = self._chunk_length_s
 
-        result = self._pipe(sample.filepath, **pipe_kwargs)
+        result = self._pipe(
+            {"raw": audio, "sampling_rate": sampling_rate}, **pipe_kwargs
+        )
 
         detections = []
         for chunk in result.get("chunks", []):

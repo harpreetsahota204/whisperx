@@ -206,7 +206,22 @@ dataset.save_view("subtitle-clips", subtitles.to_clips("whisper_segments"))
   additions.
 - Video models are applied via a per-sample loop, not a PyTorch DataLoader, so
   there is no `num_workers` consideration here.
-- Videos with **no audio stream** make the pipeline's ffmpeg read fail for
-  that sample. `apply_model` skips failed samples by default
-  (`skip_failures=True`), logging a warning and leaving both fields unset;
-  pass `skip_failures=False` to raise instead.
+- **Cloud-backed datasets (FiftyOne Enterprise)** are supported: media paths
+  are resolved via `sample.local_path` when available, which downloads remote
+  media (e.g. `gs://` / `s3://` filepaths) to the local media cache as needed.
+  Open-source datasets use `sample.filepath` directly. For batch runs,
+  pre-cache the media up-front rather than one video at a time mid-loop:
+
+  ```python
+  dataset.download_media()  # idempotent; already-cached files are skipped
+  dataset.apply_model(model, ...)
+  ```
+- Audio is decoded by reading the media file **directly with ffmpeg** and
+  passing the raw array to the pipeline. (Passing a filename instead would
+  make transformers pipe the file's bytes through ffmpeg's stdin — a
+  non-seekable stream that cannot demux MP4s whose `moov` atom trails the
+  media data, failing with a misleading "soundfile is malformed" error.)
+- Videos with **no audio stream** raise an error for that sample.
+  `apply_model` skips failed samples by default (`skip_failures=True`),
+  logging a warning and leaving both fields unset; pass
+  `skip_failures=False` to raise instead.
