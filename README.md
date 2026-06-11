@@ -170,6 +170,31 @@ Using `label_field={"segments": "whisper_segments", "transcript": "whisper_trans
 - `whisper_transcript`: top-level `StringField` with the flat transcript —
   queryable on its own (text filters, `match`, embeddings, VLM context).
 
+## Showing the spoken text on the App timeline
+
+Segments carry a constant `label="speech"` so label cardinality stays low —
+class filters, color coding, and `count_values()` remain meaningful, and the
+label slot stays free for future class-like axes (e.g. speaker diarization).
+The spoken text lives in each detection's `text` attribute.
+
+To read the timeline like subtitles, re-render the text as the display label
+with a view-level `set_field`. This is purely a view transformation — the
+stored labels are untouched:
+
+```python
+from fiftyone import ViewField as F
+
+subtitles = dataset.set_field(
+    "whisper_segments.detections.label", F("text")
+)
+
+# use it ad hoc in a session...
+session.view = subtitles
+
+# ...or persist it as a saved view, selectable from the App's view bar
+dataset.save_view("subtitles", subtitles)
+```
+
 ## Notes
 
 - Timestamps are **segment-level** (from Whisper's `return_timestamps=True`).
