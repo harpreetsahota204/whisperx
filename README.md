@@ -193,6 +193,9 @@ session.view = subtitles
 
 # ...or persist it as a saved view, selectable from the App's view bar
 dataset.save_view("subtitles", subtitles)
+
+# ...or isolate every spoken segment: one clip sample per utterance
+dataset.save_view("subtitle-clips", subtitles.to_clips("whisper_segments"))
 ```
 
 ## Notes
