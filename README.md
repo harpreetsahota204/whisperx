@@ -188,7 +188,12 @@ Using `label_field={"segments": "whisper_segments", "transcript": "whisper_trans
   dataset.download_media()  # idempotent; already-cached files are skipped
   dataset.apply_model(model, ...)
   ```
-- Videos with **no audio stream** make the pipeline's ffmpeg read fail for
-  that sample. `apply_model` skips failed samples by default
-  (`skip_failures=True`), logging a warning and leaving both fields unset;
-  pass `skip_failures=False` to raise instead.
+- Audio is decoded by reading the media file **directly with ffmpeg** and
+  passing the raw array to the pipeline. (Passing a filename instead would
+  make transformers pipe the file's bytes through ffmpeg's stdin — a
+  non-seekable stream that cannot demux MP4s whose `moov` atom trails the
+  media data, failing with a misleading "soundfile is malformed" error.)
+- Videos with **no audio stream** raise an error for that sample.
+  `apply_model` skips failed samples by default (`skip_failures=True`),
+  logging a warning and leaving both fields unset; pass
+  `skip_failures=False` to raise instead.
